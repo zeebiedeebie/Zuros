@@ -111,7 +111,6 @@ def generate_dungeon(
         # Dig out this room's inner area.
         dungeon.tiles[new_room.inner] = tile_types.floor
 
-
         if len(rooms) == 0:
             # The first room, where the player starts.
             player.place(*new_room.center, dungeon)
@@ -122,11 +121,13 @@ def generate_dungeon(
 
         place_entities(new_room, dungeon, max_monsters_per_room)
 
-        for i in dungeon.tiles:
-            if dungeon.tiles[x, y] == tile_types.wall and random.random() > 0.95:
-                dungeon.tiles[x, y] = tile_types.ore
-
         # Finally, append the new room to the list.
         rooms.append(new_room)
+
+    # Ore Pass
+    for x in range(map_width):
+        for y in range(map_height):
+            if dungeon.tiles[x, y] == tile_types.wall and random.random() > 0.99:
+                dungeon.tiles[x, y] = tile_types.ore
 
     return dungeon
