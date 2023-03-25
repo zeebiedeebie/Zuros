@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, Iterator, Optional, TYPE_CHECKING
+from typing import Iterable, Iterator, Optional, TYPE_CHECKING, Tuple
 
 import numpy as np  # type: ignore
 from tcod.console import Console
@@ -42,7 +42,7 @@ class GameMap:
 
     @property
     def items(self) -> Iterator[Item]:
-        yield from (entity for entity in self.entities if isinstance(entity,Item))
+        yield from (entity for entity in self.entities if isinstance(entity, Item))
 
     def get_blocking_entity_at_location(
             self, location_x: int, location_y: int
@@ -55,6 +55,15 @@ class GameMap:
             ):
                 return entity
 
+        return None
+
+    def get_blocking_tile_at_location(
+            self,
+            location_x: int,
+            location_y: int
+    ) -> Optional[tile_types.tile_dt]:
+        if not self.tiles["walkable"][location_x,location_y]:
+            return self.tiles[location_x,location_y]
         return None
 
     def get_actor_at_location(self, x: int, y: int) -> Optional[Actor]:
@@ -75,14 +84,14 @@ class GameMap:
                 If it isn't, but it's in the "explored" array, then draw it with the "dark" colors.
                 Otherwise, the default is "SHROUD".
                 """
-        console.tiles_rgb[0 : self.width, 0 : self.height] = np.select(
+        console.tiles_rgb[0: self.width, 0: self.height] = np.select(
             condlist=[self.visible, self.explored],
             choicelist=[self.tiles["light"], self.tiles["dark"]],
             default=tile_types.SHROUD,
         )
 
         entities_sorted_for_rendering = sorted(
-            self.entities, key= lambda x: x.render_order.value
+            self.entities, key=lambda x: x.render_order.value
         )
 
         for entity in entities_sorted_for_rendering:

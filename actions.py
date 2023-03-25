@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Optional, Tuple, TYPE_CHECKING
 import color
 import exceptions
+import tile_types
 
 if TYPE_CHECKING:
     from engine import Engine
@@ -103,6 +104,10 @@ class ActionWithDirection(Action):
         return self.engine.game_map.get_blocking_entity_at_location(*self.dest_xy)
 
     @property
+    def blocking_tile(self) -> Optional[Tuple[int, int]]:
+        return self.engine.game_map.get_blocking_tile_at_location(*self.dest_xy)
+
+    @property
     def target_actor(self) -> Optional[Actor]:
         """Return the target actor at this action's destination"""
         return self.engine.game_map.get_actor_at_location(*self.dest_xy)
@@ -146,9 +151,24 @@ class MovementAction(ActionWithDirection):
         self.entity.move(self.dx, self.dy)
 
 
+class MiningAction(ActionWithDirection):
+    def perform(self) -> None:
+        dest_x, dest_y = self.dest_xy
+
+        if not self.engine.game_map.in_bounds(dest_x, dest_y):
+            raise exceptions.Impossible("You cannot mine this.")
+        if self.engine.game_map.tiles["walkable"][dest_x, dest_y]:
+            raise exceptions.Impossible("You cannot mine this.")
+        else:
+            self.engine.game_map.tiles[dest_x,dest_y] = tile_types.floor
+
+
 class BumpAction(ActionWithDirection):
     def perform(self) -> None:
+        dest_x, dest_y = self.dest_xy
         if self.target_actor:
             return MeleeAction(self.entity, self.dx, self.dy).perform()
+        elif self.engine.game_map.get_blocking_tile_at_location(dest_x, dest_y):
+            return MiningAction(self.entity, self.dx, self.dy).perform()
         else:
             return MovementAction(self.entity, self.dx, self.dy).perform()
