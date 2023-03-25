@@ -444,12 +444,24 @@ class TeleportCheatEventHandler(SelectIndexHandler):
         return MainGameEventHandler(self.engine)
 
 class DigCheatEventHandler(SelectIndexHandler):
+
+    def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
+        key = event.sym
+
+        if key == tcod.event.K_SPACE:
+            return BuildCheatEventHandler(self.engine)
     def on_index_selected(self, x: int, y: int) -> Optional[ActionOrHandler]:
         if self.engine.game_map.tiles[x,y] == tile_types.wall or tile_types.ore:
             self.engine.game_map.tiles[x, y] = tile_types.floor
         return DigCheatEventHandler(self.engine)
 
 class BuildCheatEventHandler(SelectIndexHandler):
+
+    def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
+        key = event.sym
+
+        if key == tcod.event.K_SPACE:
+            return DigCheatEventHandler(self.engine)
     def on_index_selected(self, x: int, y: int) -> Optional[ActionOrHandler]:
         if self.engine.game_map.tiles[x, y] == tile_types.floor:
             self.engine.game_map.tiles[x, y] = tile_types.wall
