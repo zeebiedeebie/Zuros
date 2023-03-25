@@ -125,9 +125,17 @@ def generate_dungeon(
         rooms.append(new_room)
 
     # Ore Pass
+    # for x in range(map_width):
+    #     for y in range(map_height):
+    #         if dungeon.tiles[x, y] == tile_types.wall and random.random() > 0.99:
+    #             dungeon.tiles[x, y] = tile_types.ore
+    seed = random.randint(0, 999999)
+    noise = tcod.noise.Noise(dimensions=2, algorithm=tcod.noise.Algorithm.PERLIN, seed=seed)
+    noise_grid = noise[tcod.noise.grid(shape=(map_height, map_width), scale=.25, origin=(0, 0))]
+
     for x in range(map_width):
         for y in range(map_height):
-            if dungeon.tiles[x, y] == tile_types.wall and random.random() > 0.99:
+            if dungeon.tiles[x, y] != tile_types.floor and noise_grid[x, y] > 0.4:
                 dungeon.tiles[x, y] = tile_types.ore
 
     return dungeon
