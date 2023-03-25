@@ -37,3 +37,10 @@ health_potion = Item(
     name="Health Potion",
     consumable=HealingConsumable(amount=4)
 )
+
+orenugget = Item(
+    char="*",
+    color=(250, 121, 33),
+    name="Nugget",
+    consumable=HealingConsumable(amount=1) # TODO: Remove this
+)

@@ -62,8 +62,10 @@ class GameMap:
             location_x: int,
             location_y: int
     ) -> Optional[tile_types.tile_dt]:
-        if not self.tiles["walkable"][location_x,location_y]:
-            return self.tiles[location_x,location_y]
+        if not self.in_bounds(location_x, location_y):
+            return None
+        if not self.tiles["walkable"][location_x, location_y]:
+            return self.tiles[location_x, location_y]
         return None
 
     def get_actor_at_location(self, x: int, y: int) -> Optional[Actor]:

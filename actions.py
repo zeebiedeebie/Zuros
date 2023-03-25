@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Optional, Tuple, TYPE_CHECKING
 import color
+import entity_factories
 import exceptions
 import tile_types
 
@@ -159,8 +160,9 @@ class MiningAction(ActionWithDirection):
             raise exceptions.Impossible("You cannot mine this.")
         if self.engine.game_map.tiles["walkable"][dest_x, dest_y]:
             raise exceptions.Impossible("You cannot mine this.")
-        else:
+        elif self.engine.game_map.tiles[dest_x,dest_y] == tile_types.ore:
             self.engine.game_map.tiles[dest_x,dest_y] = tile_types.floor
+            entity_factories.orenugget.spawn(self.entity.parent, dest_x, dest_y)
 
 
 class BumpAction(ActionWithDirection):
