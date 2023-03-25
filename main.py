@@ -10,8 +10,8 @@ from procgen import generate_dungeon
 
 
 def main() -> None:
-    screen_width = 80
-    screen_height = 50
+    screen_width = 80 # 80
+    screen_height = 50 # 50
 
     map_width = 80
     map_height = 43
@@ -23,8 +23,8 @@ def main() -> None:
     max_monsters_per_room = 2
     max_items_per_room = 2
 
-    player_x = int(screen_width / 2)
-    player_y = int(screen_height / 2)
+    player_x = int(map_width / 2)
+    player_y = int(map_height / 2)
 
     tileset = tcod.tileset.load_tilesheet(
         "dejavu10x10_gs_tc.png", 32, 8, tcod.tileset.CHARMAP_TCOD
@@ -47,7 +47,7 @@ def main() -> None:
     engine.update_fov()
 
     engine.message_log.add_message(
-        "Welcome to Zuros, adventurer.", color.welcome_text
+        "You pass through a one-way door into Zuros.", color.welcome_text
     )
 
     with tcod.context.new_terminal(

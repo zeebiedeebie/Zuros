@@ -1,13 +1,12 @@
+from components import consumable
 from components.ai import HostileEnemy
-from components.consumable import HealingConsumable
 from components.fighter import Fighter
 from components.inventory import Inventory
 from entity import Actor, Item
 
-
 player = Actor(
     char="@",
-    color=(255,255,255),
+    color=(255, 255, 255),
     name="Player",
     ai_cls=HostileEnemy,
     fighter=Fighter(hp=30, defense=2, power=5),
@@ -33,14 +32,21 @@ groll = Actor(
 
 health_potion = Item(
     char="!",
-    color=(127,0,255),
+    color=(127, 0, 255),
     name="Health Potion",
-    consumable=HealingConsumable(amount=4)
+    consumable=consumable.HealingConsumable(amount=4)
 )
 
 orenugget = Item(
     char="*",
     color=(250, 121, 33),
     name="Nugget",
-    consumable=HealingConsumable(amount=1) # TODO: Remove this
+    consumable=consumable.HealingConsumable(amount=1)  # TODO: Remove thiss
+)
+
+lightning_scroll = Item(
+    char="~",
+    color=(255, 255, 0),
+    name="Lightning Scroll",
+    consumable=consumable.LightningDamageConsumable(damage=20,maximum_range=5),
 )
