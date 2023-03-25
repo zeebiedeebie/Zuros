@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import os
 from typing import Optional, TYPE_CHECKING, Callable, Tuple, Union
+
+import numpy as np
 import tcod
 
 import actions
+import tile_types
 from actions import (
     Action,
     BumpAction,
@@ -401,9 +404,55 @@ class MainGameEventHandler(EventHandler):
             return InventoryDropHandler(self.engine)
         elif key == tcod.event.K_SLASH or key == tcod.event.K_KP_DIVIDE:
             return LookHandler(self.engine)
+        elif key == tcod.event.K_F1:
+            return CheatEventHandler(self.engine)
 
         return action
 
+class CheatEventHandler(EventHandler):
+    def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
+        action: Optional[Action] = None
+
+        key = event.sym
+        player = self.engine.player
+        game_map = self.engine.game_map
+
+        if key == tcod.event.K_r:
+            game_map.visible = np.full((game_map.width,game_map.height),True)
+            return MainGameEventHandler(self.engine)
+        elif key == tcod.event.K_t:
+            return TeleportCheatEventHandler(self.engine)
+        elif key == tcod.event.K_d:
+            return DigCheatEventHandler(self.engine)
+        elif key == tcod.event.K_b:
+            return BuildCheatEventHandler(self.engine)
+        elif key == tcod.event.K_F1:
+            return MainGameEventHandler(self.engine)
+
+    def on_render(self, console: tcod.Console) -> None:
+        super().on_render(console)
+        x,y = self.engine.player.x, self.engine.player.y
+        console.tiles_rgb["fg"][x,y] = color.red
+
+class TeleportCheatEventHandler(SelectIndexHandler):
+    def on_index_selected(self, x: int, y: int) -> Optional[ActionOrHandler]:
+        if not any(entity.x == x and entity.y == y for entity in  self.engine.game_map.entities):
+            player = self.engine.player
+            player.x = x
+            player.y = y
+        return MainGameEventHandler(self.engine)
+
+class DigCheatEventHandler(SelectIndexHandler):
+    def on_index_selected(self, x: int, y: int) -> Optional[ActionOrHandler]:
+        if self.engine.game_map.tiles[x,y] == tile_types.wall or tile_types.ore:
+            self.engine.game_map.tiles[x, y] = tile_types.floor
+        return DigCheatEventHandler(self.engine)
+
+class BuildCheatEventHandler(SelectIndexHandler):
+    def on_index_selected(self, x: int, y: int) -> Optional[ActionOrHandler]:
+        if self.engine.game_map.tiles[x, y] == tile_types.floor:
+            self.engine.game_map.tiles[x, y] = tile_types.wall
+        return BuildCheatEventHandler(self.engine)
 
 class GameOverEventHandler(EventHandler):
 
