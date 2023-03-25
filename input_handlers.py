@@ -432,7 +432,8 @@ class CheatEventHandler(EventHandler):
     def on_render(self, console: tcod.Console) -> None:
         super().on_render(console)
         x,y = self.engine.player.x, self.engine.player.y
-        console.tiles_rgb["fg"][x,y] = color.red
+        console.print(0,48,"(R)eveal,(T)eleport")
+        console.print(0,49,"(D)ig,or (B)uild")
 
 class TeleportCheatEventHandler(SelectIndexHandler):
     def on_index_selected(self, x: int, y: int) -> Optional[ActionOrHandler]:
