@@ -34,7 +34,8 @@ class Entity:
             color: Tuple[int, int, int] = (255, 255, 255),
             name: str = "<Unnamed>",
             blocks_movement: bool = False,
-            render_order: RenderOrder = RenderOrder.CORPSE
+            render_order: RenderOrder = RenderOrder.CORPSE,
+            description: str = "<No description>",
     ):
         self.x = x
         self.y = y
@@ -43,6 +44,7 @@ class Entity:
         self.name = name
         self.blocks_movement = blocks_movement
         self.render_order = render_order
+        self.description = description
         if parent:
             # If parent isn't provided now it will be set later
             self.parent = parent
@@ -94,7 +96,8 @@ class Actor(Entity):
             ai_cls: Type[BaseAI],
             fighter: Fighter,
             inventory: Inventory,
-            level: Level
+            level: Level,
+            description: str = "<No description>",
     ):
         super().__init__(
             x=x,
@@ -104,6 +107,7 @@ class Actor(Entity):
             name=name,
             blocks_movement=True,
             render_order=RenderOrder.ACTOR,
+            description=description,
         )
 
         self.ai: Optional[BaseAI] = ai_cls(self)
@@ -132,6 +136,7 @@ class Item(Entity):
             color: Tuple[int, int, int] = (255,255,255),
             name: str = "<Unnamed>",
             consumable: Consumable,
+            description: str ="<No description>"
     ):
         super().__init__(
             x=x,
@@ -140,7 +145,8 @@ class Item(Entity):
             color=color,
             name=name,
             blocks_movement=False,
-            render_order=RenderOrder.ITEM
+            render_order=RenderOrder.ITEM,
+            description=description
         )
 
         self.consumable = consumable

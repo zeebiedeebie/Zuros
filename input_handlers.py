@@ -233,6 +233,7 @@ class CharacterScreenEventHandler(AskUserEventHandler):
             x=x + 1, y=y + 5, string=f"Defense: {self.engine.player.fighter.defense}"
         )
 
+
 class LevelUpEventHandler(AskUserEventHandler):
     TITLE = "Level Up"
 
@@ -446,9 +447,31 @@ class LookHandler(SelectIndexHandler):
     """Lets the player look around using the keyboard."""
 
     def on_index_selected(self, x: int, y: int) -> MainGameEventHandler:
-        """Return to main handler."""
-        return MainGameEventHandler(self.engine)
+        # TODO: Description component
+        selected_entity = None
+        if not any(entity.x == x and entity.y == y for entity in self.engine.game_map.entities):
+            if self.engine.game_map.tiles[x, y] == tile_types.ore:
+                self.engine.message_log.add_message("You inspect the ore")
+        else:
+            for entity in self.engine.game_map.entities:
+                if entity.x == x and entity.y == y:
+                    selected_entity = entity
+                    break
+            self.engine.message_log.add_message(f"You inspect the {selected_entity.name}")
 
+        if selected_entity is None:
+            return MainGameEventHandler(self.engine)
+        # Go to Description popup
+        if hasattr(selected_entity, "description"):
+            self.engine.message_log.add_message(selected_entity.name + ": " + selected_entity.description)
+            return PopupMessage(self, selected_entity.name + ": " + selected_entity.description)
+        else:
+            return MainGameEventHandler(self.engine)
+
+
+# class DescriptionHandler(EventHandler):
+#     def on_render(self, console: tcod.Console) -> None:
+#
 
 class SingleRangedAttackHandler(SelectIndexHandler):
     """Handles targeting a single enemy. Only the enemy selected will be affected."""
