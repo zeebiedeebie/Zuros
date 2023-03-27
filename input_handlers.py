@@ -86,6 +86,7 @@ class BaseEventHandler(tcod.event.EventDispatch[ActionOrHandler]):
     def ev_quit(self, event: tcod.event.Quit) -> Optional[Action]:
         raise SystemExit()
 
+
 class PopupMessage(BaseEventHandler):
     """Display a popup text window."""
 
@@ -112,6 +113,7 @@ class PopupMessage(BaseEventHandler):
         """Any key returns to the parent handler."""
         return self.parent
 
+
 class EventHandler(BaseEventHandler):
     def __init__(self, engine: Engine):
         self.engine = engine
@@ -126,6 +128,8 @@ class EventHandler(BaseEventHandler):
             if not self.engine.player.is_alive:
                 # The player was killed sometime during or after the action.
                 return GameOverEventHandler(self.engine)
+            elif self.engine.player.level.requires_level_up:
+                return LevelUpEventHandler(self.engine)
             return MainGameEventHandler(self.engine)  # Return to the main handler.
         return self
 
@@ -182,6 +186,120 @@ class AskUserEventHandler(EventHandler):
         By default, this returns to the main event handler.
         """
         return MainGameEventHandler(self.engine)
+
+
+class CharacterScreenEventHandler(AskUserEventHandler):
+    TITLE = "Character Information"
+
+    def on_render(self, console: tcod.Console) -> None:
+        super().on_render(console)
+
+        if self.engine.player.x <= 30:
+            x = 40
+        else:
+            x = 0
+
+        y = 0
+
+        width = len(self.TITLE) + 4
+
+        console.draw_frame(
+            x=x,
+            y=y,
+            width=width,
+            height=7,
+            title=self.TITLE,
+            clear=True,
+            fg=(255, 255, 255),
+            bg=(0, 0, 0),
+        )
+
+        console.print(
+            x=x + 1, y=y + 1, string=f"Level: {self.engine.player.level.current_level}"
+        )
+        console.print(
+            x=x + 1, y=y + 2, string=f"XP: {self.engine.player.level.current_xp}"
+        )
+        console.print(
+            x=x + 1,
+            y=y + 3,
+            string=f"XP for next Level: {self.engine.player.level.experience_to_next_level}",
+        )
+
+        console.print(
+            x=x + 1, y=y + 4, string=f"Attack: {self.engine.player.fighter.power}"
+        )
+        console.print(
+            x=x + 1, y=y + 5, string=f"Defense: {self.engine.player.fighter.defense}"
+        )
+
+class LevelUpEventHandler(AskUserEventHandler):
+    TITLE = "Level Up"
+
+    def on_render(self, console: tcod.Console) -> None:
+        super().on_render(console)
+
+        if self.engine.player.x <= 30:
+            x = 40
+        else:
+            x = 0
+
+        console.draw_frame(
+            x=x,
+            y=0,
+            width=35,
+            height=8,
+            title=self.TITLE,
+            clear=True,
+            fg=(255, 255, 255),
+            bg=(0, 0, 0),
+        )
+
+        console.print(x=x + 1, y=1, string="Congratulations! You level up!")
+        console.print(x=x + 1, y=2, string="Select an attribute to increase.")
+
+        console.print(
+            x=x + 1,
+            y=4,
+            string=f"a) Constitution (+20 HP, from {self.engine.player.fighter.max_hp})",
+        )
+        console.print(
+            x=x + 1,
+            y=5,
+            string=f"b) Strength (+1 attack, from {self.engine.player.fighter.power})",
+        )
+        console.print(
+            x=x + 1,
+            y=6,
+            string=f"c) Agility (+1 defense, from {self.engine.player.fighter.defense})",
+        )
+
+    def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
+        player = self.engine.player
+        key = event.sym
+        index = key - tcod.event.K_a
+
+        if 0 <= index <= 2:
+            if index == 0:
+                player.level.increase_max_hp()
+            elif index == 1:
+                player.level.increase_power()
+            else:
+                player.level.increase_defense()
+        else:
+            self.engine.message_log.add_message("Invalid entry.", color.invalid)
+
+            return None
+
+        return super().ev_keydown(event)
+
+    def ev_mousebuttondown(
+            self, event: tcod.event.MouseButtonDown
+    ) -> Optional[ActionOrHandler]:
+        """
+        Don't allow the player to click to exit the menu, like normal.
+        """
+        return None
 
 
 class InventoryEventHandler(AskUserEventHandler):
@@ -334,25 +452,26 @@ class LookHandler(SelectIndexHandler):
 
 class SingleRangedAttackHandler(SelectIndexHandler):
     """Handles targeting a single enemy. Only the enemy selected will be affected."""
+
     def __init__(
-            self, engine: Engine, callback: Callable[[Tuple[int,int]], Optional[Action]]
+            self, engine: Engine, callback: Callable[[Tuple[int, int]], Optional[Action]]
     ):
         super().__init__(engine)
 
         self.callback = callback
 
     def on_index_selected(self, x: int, y: int) -> Optional[Action]:
-        return self.callback((x,y))
+        return self.callback((x, y))
 
 
 class AreaRangedAttackHandler(SelectIndexHandler):
     """Handles targeting an area within a given radius. Any entity within the area will be affected."""
 
     def __init__(
-        self,
-        engine: Engine,
-        radius: int,
-        callback: Callable[[Tuple[int, int]], Optional[Action]],
+            self,
+            engine: Engine,
+            radius: int,
+            callback: Callable[[Tuple[int, int]], Optional[Action]],
     ):
         super().__init__(engine)
 
@@ -378,14 +497,21 @@ class AreaRangedAttackHandler(SelectIndexHandler):
     def on_index_selected(self, x: int, y: int) -> Optional[Action]:
         return self.callback((x, y))
 
+
 class MainGameEventHandler(EventHandler):
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
         action: Optional[Action] = None
 
         key = event.sym
+        modifier = event.mod
 
         player = self.engine.player
+
+        if key == tcod.event.K_PERIOD and modifier & (
+                tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT
+        ):
+            return actions.TakeStairsAction(player)
 
         if key in MOVE_KEYS:
             dx, dy = MOVE_KEYS[key]
@@ -404,10 +530,13 @@ class MainGameEventHandler(EventHandler):
             return InventoryDropHandler(self.engine)
         elif key == tcod.event.K_SLASH or key == tcod.event.K_KP_DIVIDE:
             return LookHandler(self.engine)
+        elif key == tcod.event.K_c:
+            return CharacterScreenEventHandler(self.engine)
         elif key == tcod.event.K_F1:
             return CheatEventHandler(self.engine)
 
         return action
+
 
 class CheatEventHandler(EventHandler):
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
@@ -418,7 +547,7 @@ class CheatEventHandler(EventHandler):
         game_map = self.engine.game_map
 
         if key == tcod.event.K_r:
-            game_map.visible = np.full((game_map.width,game_map.height),True)
+            game_map.visible = np.full((game_map.width, game_map.height), True)
             return MainGameEventHandler(self.engine)
         elif key == tcod.event.K_t:
             return TeleportCheatEventHandler(self.engine)
@@ -431,17 +560,20 @@ class CheatEventHandler(EventHandler):
 
     def on_render(self, console: tcod.Console) -> None:
         super().on_render(console)
-        x,y = self.engine.player.x, self.engine.player.y
-        console.print(0,48,"(R)eveal,(T)eleport")
-        console.print(0,49,"(D)ig,or (B)uild")
+        x, y = self.engine.player.x, self.engine.player.y
+        console.print(0, 48, "(R)eveal,(T)eleport")
+        console.print(0, 49, "(D)ig,or (B)uild")
+
 
 class TeleportCheatEventHandler(SelectIndexHandler):
     def on_index_selected(self, x: int, y: int) -> Optional[ActionOrHandler]:
-        if not any(entity.x == x and entity.y == y for entity in  self.engine.game_map.entities):
+        if not any(entity.x == x and entity.y == y for entity in self.engine.game_map.entities):
             player = self.engine.player
             player.x = x
             player.y = y
+            self.engine.update_fov()
         return MainGameEventHandler(self.engine)
+
 
 class DigCheatEventHandler(SelectIndexHandler):
 
@@ -450,10 +582,14 @@ class DigCheatEventHandler(SelectIndexHandler):
 
         if key == tcod.event.K_SPACE:
             return BuildCheatEventHandler(self.engine)
+        elif key == tcod.event.K_ESCAPE:
+            return MainGameEventHandler(self.engine)
+
     def on_index_selected(self, x: int, y: int) -> Optional[ActionOrHandler]:
-        if self.engine.game_map.tiles[x,y] == tile_types.wall or tile_types.ore:
+        if self.engine.game_map.tiles[x, y] == tile_types.wall or tile_types.ore:
             self.engine.game_map.tiles[x, y] = tile_types.floor
         return DigCheatEventHandler(self.engine)
+
 
 class BuildCheatEventHandler(SelectIndexHandler):
 
@@ -462,10 +598,14 @@ class BuildCheatEventHandler(SelectIndexHandler):
 
         if key == tcod.event.K_SPACE:
             return DigCheatEventHandler(self.engine)
+        elif key == tcod.event.K_ESCAPE:
+            return MainGameEventHandler(self.engine)
+
     def on_index_selected(self, x: int, y: int) -> Optional[ActionOrHandler]:
         if self.engine.game_map.tiles[x, y] == tile_types.floor:
             self.engine.game_map.tiles[x, y] = tile_types.wall
         return BuildCheatEventHandler(self.engine)
+
 
 class GameOverEventHandler(EventHandler):
 
