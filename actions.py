@@ -176,7 +176,7 @@ class MiningAction(ActionWithDirection):
             raise exceptions.Impossible("You cannot mine this.")
         elif self.engine.game_map.tiles[dest_x,dest_y] == tile_types.ore:
             self.engine.game_map.tiles[dest_x,dest_y] = tile_types.floor
-            entity_factories.orenugget.spawn(self.entity.parent, dest_x, dest_y)
+            entity_factories.ore_nugget.spawn(self.entity.parent, dest_x, dest_y)
 
 
 class BumpAction(ActionWithDirection):

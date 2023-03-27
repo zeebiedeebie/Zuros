@@ -61,7 +61,7 @@ health_potion = Item(
     description="A healing potion that restores 4 health"
 )
 
-orenugget = Item(
+ore_nugget = Item(
     char="*",
     color=(250, 121, 33),
     name="Nugget",
